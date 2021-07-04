@@ -5,26 +5,26 @@ import src.get as get
 import os
 
 
-finviz_api = Flask(__name__)
+app = Flask(__name__)
 
 
-@finviz_api.route('/scrapper/data')
+@app.route('/scrapper/data')
 def get_stock_data():
     ticker = request.args.get('ticker')
     result = get.get_ticker_data(ticker)
     return result
 
 
-@finviz_api.route('/scrapper/screeners')
+@app.route('/scrapper/screeners')
 def get_screeners():
     result = get.get_screeners()
     return json.dumps(result)
 
 
-@finviz_api.route('/health')
+@app.route('/health')
 def health():
 
     return {"status": "online"}
 
 
-finviz_api.run()
+app.run()

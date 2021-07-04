@@ -1,1 +1,1 @@
-web:gunicorn server:finviz_api
+web: gunicorn app:app
