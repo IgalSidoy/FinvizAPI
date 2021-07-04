@@ -208,6 +208,43 @@ def get_ticker_data(ticker):
         result[item] = result[item].replace("</small","")
   return result
 
+def get_screeners():
+  res = requests.get(connection.base_url, headers=headers)
+  if res.status_code!=200:
+    exit()
+  encoding = 'utf-8'
+  response = res.content.decode(encoding)
+  data = response.split('<table')
+
+  
+  result = []
+  for count in range(15,17):
+    _data = data[count].split('<tr')
+    for index in range(2,len(_data)-2):
+      name = _data[index].split("<td")[1].split(">")[2].replace('</b','')
+      industry =_data[index].split("<td")[1].split(">")[4].split('|')[0].replace('&nbsp;',"")
+      market_cap = _data[index].split("<td")[1].split(">")[4].split('|')[2].split(']')[0].replace(' ','')
+      ticker = _data[index].split("<td")[1].split(">")[6].replace('</a',"")
+      last = _data[index].split("<td")[2].split('>')[1].replace('</td','')
+      change = _data[index].split("<td")[3].split('>')[2].replace('</span','')
+      volume = _data[index].split("<td")[4].split('>')[1].replace('</td','')
+
+      _temp = _data[index].split("<td")[6].split('</a>')
+      _temp = _temp[len(_temp)-2].split('">')
+      signal = _temp[len(_temp)-1]
+
+      obj = {
+        'ticker':ticker,
+        'name':name,
+        'industry':industry,
+        'market_cap':market_cap,
+        'last':last,
+        'change':change,
+        'volume':volume,
+        'signal':signal
+      }
+      result.append(obj)
+  return result
 
 
-
+  
