@@ -246,5 +246,3 @@ def get_screeners():
       result.append(obj)
   return result
 
-
-  

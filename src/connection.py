@@ -12,10 +12,6 @@ params = {
               }
           }
 
-
-#v=340&s=ta_topgainers&r=81
-#https://finviz.com/screener.ashx?v=340&s=ta_toplosers
-
 def get_url_ticker_data(ticker):
   _params = params["get_ticker"]
   _params["t"] = ticker
