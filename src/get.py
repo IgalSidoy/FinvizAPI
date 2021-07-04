@@ -3,13 +3,21 @@ import connection
 from connection import headers
 
 
+def exception(code):
+   if code == 404:
+     return {"status":404, 
+             "message":'invalid/not found' }
+   if code == 400:
+     return {"status":400, 
+             "message":'bad request' }
 def get_ticker_data(ticker):
 
   url = connection.get_url_ticker_data(ticker)
   res = requests.get(url, headers=headers)
 
   if res.status_code!=200:
-    exit()
+    result = exception(res.status_code)
+    return result
 
   encoding = 'utf-8'
   response = res.content.decode(encoding)
@@ -210,8 +218,11 @@ def get_ticker_data(ticker):
 
 def get_screeners():
   res = requests.get(connection.base_url, headers=headers)
+  print("get_screeners "+ str(res) )
   if res.status_code!=200:
-    exit()
+    result = exception(res.status_code)
+    return result
+    
   encoding = 'utf-8'
   response = res.content.decode(encoding)
   data = response.split('<table')
