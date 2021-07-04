@@ -6,7 +6,7 @@ import os
 
 
 finviz_api = Flask(__name__)
-debug = True
+debug = False
 
 
 @finviz_api.route('/scrapper/data')
