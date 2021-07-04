@@ -6,7 +6,6 @@ import os
 
 
 finviz_api = Flask(__name__)
-debug = False
 
 
 @finviz_api.route('/scrapper/data')
@@ -28,8 +27,4 @@ def health():
     return {"status": "online"}
 
 
-if debug:
-    port = int(os.environ.get("PORT", 6000))
-    finviz_api.run(port=port, debug=True)
-else:
-    finviz_api.run()
+finviz_api.run()
