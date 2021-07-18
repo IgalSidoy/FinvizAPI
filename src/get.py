@@ -1,10 +1,9 @@
-from typing import Coroutine
 import requests
 import connection as connection
 from connection import headers
 from data.stocks import us_stocks
-from utility import save_dic_csv,load_from_ignored,load_saved_symbols,calculateFairPrice
-import sys
+from utility import save_dic_csv,load_from_ignored,load_saved_symbols,calculateFairPrice,remove_coma_end_convert_to_int,get_date,working,finished
+
 
 
 def exception(code):
@@ -188,7 +187,7 @@ def get_ticker_data(ticker):
             "P/C": price_to_ash_per_share_mrq,
             "EPS_Next_5Years": long_term_annual_growth_estimate,
             "return_on_equity_ttm": return_on_equity_ttm,
-            "52W Range": _52_Week_trading_range,
+            "52W_Range": _52_Week_trading_range,
             "Performance_Year_To_Date": performance_year_to_date,
             "Dividend_Annual": dividend_annual,
             "P/FCF": price_to_free_cash_flow_ttm,
@@ -220,7 +219,7 @@ def get_ticker_data(ticker):
             "dividend_payout_ratio_ttm": dividend_payout_ratio_ttm,
             "Payout": dividend_payout_ratio_ttm,
             "Average_Volume_3_Months": average_volume_3_months,
-            "Analysts' mean recommendation (1=Buy 5=Sell)": analysts_mean_recommendation_1_buy_5_sell,
+            "Analysts mean recommendation (1=Buy 5=Sell)": analysts_mean_recommendation_1_buy_5_sell,
             "SMA_20": SMA_20,
             "SMA50": SMA50,
             "SMA200": SMA50,
@@ -241,6 +240,15 @@ def get_ticker_data(ticker):
                 result[item] = result[item].replace('<small>','')
                 result[item] = result[item].replace('</small>','')
         
+
+        result['Volume'] = remove_coma_end_convert_to_int(result['Volume'],'')
+        
+        _price_range = result['52W_Range'].split('-')
+        _low = float(_price_range[0])
+        _high = float(_price_range[1])
+        result['52W_Mid'] = round((_low+_high)/2,2)
+        result['position_status'] = ''
+        
         res = calculateFairPrice(result['EPS_Next_5Years'],result['EPS(ttm)'],result["P/E"],result['Price'])
    
         if res['status']==200:
@@ -248,6 +256,13 @@ def get_ticker_data(ticker):
             result['buy_price']=res['buy_price']
             result['price_spread']=res['price_spread']
             result['profit_potential']=res['profit_potential']
+            _buy_price = float(result['buy_price'])
+            _price = float(result['Price'])
+            
+            if _buy_price>_price:
+                result['position_status'] = 'Buy'
+            else:
+                result['position_status'] = 'Sell'
         return result
     except:
         print('exception')
@@ -255,7 +270,7 @@ def get_ticker_data(ticker):
 
 def get_screeners():
     res = requests.get(connection.base_url, headers=headers)
-    print("get_screeners " + str(res))
+    
     if res.status_code != 200:
         result = exception(res.status_code)
         return result
@@ -289,7 +304,7 @@ def get_screeners():
 
             obj = {
                 'ticker': ticker,
-                'name': name,
+                'name': remove_coma_end_convert_to_int(name,' '),
                 'industry': industry,
                 'market_cap': market_cap,
                 'last': last,
@@ -324,9 +339,11 @@ def scan_stocks():
         print("symbol -- " + symbol)
         res = get_ticker_data(symbol)
         status = int(res['status'])
+
+        print('-----------------------------> '+str(status)+" status")
         print('-----------------------------> '+str(total_count)+" total")
         print('-----------------------------> '+str(len(ignore_collection))+" ignore_collection")
-        
+        print('-----------------------------> '+str(len(collection))+" collection")
         
         if status > 200:
             ignore_collection.append({'symbol':symbol})
@@ -338,12 +355,97 @@ def scan_stocks():
             save_dic_csv(save_file,collection,add_Title)
             collection = []
             add_Title = False
-            
-        collection.append(res)
-        count = len(collection)
-        print('-----------------------------> '+str(count)+' count')
         
+
+        if res['fair_price'] == '':
+            ignore_collection.append({'symbol':symbol})
+            continue
         
-    
-# print(get_ticker_data('FAST'))
-scan_stocks()
+        #created finished recored
+        _res = {
+                "Symbol":res['symbol'],
+                "MarketCap":res["MarketCapitalization"],
+                "P/E":res['P/E'],
+                "EPS(ttm)":res['EPS(ttm)'],
+                "Fair_Price":res['fair_price'],
+                "Buy_Price":res['buy_price'],
+                "Price":res['Price'],
+                "Target_Price":res['Target_Price'],
+                "52W_Range":res['52W_Range'],
+                "52W_High":res['52W_High'],
+                '52W_Mid':res['52W_Mid'],
+                "52W_Low":res['52W_Low'],
+                "Volume":res['Volume'],
+                "RSI_14":res['RSI_14'],
+                "ATR":res['ATR'],
+                "Position_Status":res['position_status']
+               
+        }
+        collection.append(_res)        
+        
+def short_invest_daily():
+
+    date = get_date()
+    name = './data/short_invest-'+str(date)+'.csv'
+    f = open(name, "w")
+    f.close()
+    collection = get_screeners()
+
+    result = []
+    count = 0
+    for rec in collection:
+        ticker = rec['ticker']
+        data =  get_ticker_data(ticker)
+        count+=1
+        price = float(data['Price'])
+        prev_price = float(data['Previous_Close'])
+        ATR_one_day = round(price-prev_price,2)
+        ATR_14 = float(data['ATR'])
+        ATR_change = abs(round(ATR_one_day/ATR_14,2))
+        price_delta = round((ATR_14+ATR_change)/2,2)
+        change = float(rec['change'].split("%")[0])
+        if change>0:
+            price_delta = price-price_delta
+        else:
+            price_delta = price+price_delta
+        res = {
+                "Symbol":data['symbol'],
+                "Industry":rec['industry'],
+                "MarketCap":data["MarketCapitalization"],
+                "P/E":data['P/E'],
+                "EPS(ttm)":data['EPS(ttm)'],
+                "Fair_Price":data['fair_price'],
+                "Buy_Price":data['buy_price'],
+                "Price":data['Price'],
+                'Previous_Close':data['Previous_Close'],
+                "Target_Price":data['Target_Price'],
+                "52W_Range":data['52W_Range'],
+                "52W_High":data['52W_High'],
+                '52W_Mid':data['52W_Mid'],
+                "52W_Low":data['52W_Low'],
+                "Volume":data['Volume'],
+                "RSI_14":data['RSI_14'],
+                "ATR":data['ATR'],
+                "ATR One Day":ATR_one_day,
+                "ATR_change":ATR_change,
+                "Position_Status":data['position_status'],
+                "Ratio-Change":rec['change'],
+                "Exit_Price":price_delta,
+                'Signal':rec['signal'],
+        }
+        
+
+
+        count = working(count)
+        result.append(res)
+
+    save_dic_csv(name,result,True)
+    finished('report - '+name.split('/')[2] +' created successfully')    
+
+
+
+
+# print(get_ticker_data('SXTC'))
+# scan_stocks()
+short_invest_daily()
+

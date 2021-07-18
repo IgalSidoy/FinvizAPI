@@ -1,7 +1,9 @@
-import collections
 import csv
 from typing import Collection
 import math
+import time
+from datetime import date
+import os
 
 
 def save_dic_csv(file,collection,add_title=False):
@@ -76,7 +78,50 @@ def calculateFairPrice(intrest,eps,PE,price):
     }
     return reuslt
 
+def remove_coma_end_convert_to_int(num,delimiter):
+
+    if ',' in num:
+        num = num.replace(',',delimiter)
+        if type(num) == 'int':
+            return int(num)
+        
+
+    return num
 
 
-# result = calculateFairPrice(10,0.61,141.73,86.6)
-# print(result)
+def get_time_range(days_back):
+    today = int(time.time()) 
+    days = days_back *24*60*60
+    result = {
+        'from':today-days,
+        'to':today
+    }
+    return result
+def get_date():
+    return date.today()
+
+def working(count):
+    clear()
+    if count==1:
+        print("working\\")
+        return count
+    if count==2:
+        print("working|")
+        return count
+    if count==3:
+        print("working/")
+        return count
+    if count>3:
+        count = 0
+        print("working-")
+        return count
+
+def finished(title):
+    clear()
+    if title == None:
+        title='finished'
+    print(title)
+
+def clear():
+    clear = lambda: os.system('clear')
+    clear()

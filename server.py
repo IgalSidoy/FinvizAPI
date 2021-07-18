@@ -2,7 +2,7 @@ from flask import request
 from flask import Flask
 import json
 import src.get as get
-import os
+
 
 
 finviz = Flask(__name__)
