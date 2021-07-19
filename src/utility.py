@@ -5,13 +5,31 @@ import time
 from datetime import date
 import os
 
+def convert_csv_to_object(file):
 
-def save_dic_csv(file,collection,add_title=False):
+    with open(file) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        result = []
+        title=[]
+        for row in csv_reader:
+            if len(title)== 0:
+                title = row
+                continue
+            obj = {}
+            for index in range(0,len(title)):
+                obj[title[index]] = row[index]
+            result.append(obj)
+    return result
+
+convert_csv_to_object('./data/short_invest-2021-07-19.csv')
+  
+
+def save_dic_csv(file,collection,add_title=False,open_type = 'a'):
     
     _title_printed = False
 
 
-    with open(file, 'a') as f:
+    with open(file, open_type) as f:
        
         space = '\n'
         for item in collection:
@@ -26,8 +44,6 @@ def save_dic_csv(file,collection,add_title=False):
                 _title_printed = True
                 f.write(title+space)
             f.write(line+space)
-
-
 
 def load_from_ignored(file):
     collection = []
@@ -88,7 +104,6 @@ def remove_coma_end_convert_to_int(num,delimiter):
 
     return num
 
-
 def get_time_range(days_back):
     today = int(time.time()) 
     days = days_back *24*60*60
@@ -97,6 +112,7 @@ def get_time_range(days_back):
         'to':today
     }
     return result
+
 def get_date():
     return date.today()
 

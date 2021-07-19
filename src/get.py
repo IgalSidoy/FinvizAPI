@@ -2,7 +2,7 @@ import requests
 import connection as connection
 from connection import headers
 from data.stocks import us_stocks
-from utility import save_dic_csv,load_from_ignored,load_saved_symbols,calculateFairPrice,remove_coma_end_convert_to_int,get_date,working,finished
+from utility import save_dic_csv,load_from_ignored,load_saved_symbols,calculateFairPrice,remove_coma_end_convert_to_int,get_date,working,finished,convert_csv_to_object
 
 
 
@@ -391,10 +391,15 @@ def short_invest_daily():
     f.close()
     collection = get_screeners()
 
+    duplicate_pointer =[]
     result = []
     count = 0
     for rec in collection:
+        
         ticker = rec['ticker']
+        if ticker in duplicate_pointer:
+            continue
+        duplicate_pointer.append(ticker)
         data =  get_ticker_data(ticker)
         count+=1
         price = float(data['Price'])
@@ -402,7 +407,7 @@ def short_invest_daily():
         ATR_one_day = round(price-prev_price,2)
         ATR_14 = float(data['ATR'])
         ATR_change = abs(round(ATR_one_day/ATR_14,2))
-        price_delta = round((ATR_14+ATR_change)/2,2)
+        price_delta = round((ATR_14+ATR_one_day)/2,2)
         change = float(rec['change'].split("%")[0])
         if change>0:
             price_delta = price-price_delta
@@ -440,12 +445,30 @@ def short_invest_daily():
         result.append(res)
 
     save_dic_csv(name,result,True)
-    finished('report - '+name.split('/')[2] +' created successfully')    
+    finished('report - '+name.split('/')[2] +' created successfully.')    
 
 
+def update_price_from_file(date):
+    file = './data/short_invest-'+date+'.csv'
+    collection = convert_csv_to_object(file)
+    today_price_title ='price '+ str(get_date())
+    count = 0
+    result = []
+    for item in collection:
+        count +=1
+        symbol = item['Symbol']
+        response = get_ticker_data(symbol)
+        price = response['Price']
+        item[today_price_title] = price
+        result.append(item)
+        count = working(count)
+    save_dic_csv(file,result,True,'w')
+    finished('fetching current prices finshed.')
 
 
 # print(get_ticker_data('SXTC'))
 # scan_stocks()
+
 short_invest_daily()
+update_price_from_file('2021-07-18')
 
