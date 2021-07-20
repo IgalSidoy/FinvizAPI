@@ -2,7 +2,8 @@ import requests
 import connection as connection
 from connection import headers
 from data.stocks import us_stocks
-from utility import save_dic_csv,load_from_ignored,load_saved_symbols,calculateFairPrice,remove_coma_end_convert_to_int,get_date,working,finished,convert_csv_to_object
+from utility import save_dic_csv,load_from_ignored,load_saved_symbols,calculateFairPrice,remove_coma_end_convert_to_int,get_date,working,finished,convert_csv_to_object,get_range_of_dates
+import os.path
 
 
 
@@ -415,6 +416,7 @@ def short_invest_daily():
             price_delta = price+price_delta
         res = {
                 "Symbol":data['symbol'],
+                "Status":'pending',
                 "Industry":rec['industry'],
                 "MarketCap":data["MarketCapitalization"],
                 "P/E":data['P/E'],
@@ -447,9 +449,13 @@ def short_invest_daily():
     save_dic_csv(name,result,True)
     finished('report - '+name.split('/')[2] +' created successfully.')    
 
-
 def update_price_from_file(date):
     file = './data/short_invest-'+date+'.csv'
+
+
+    result = os.path.isfile(file) 
+    if result == False:
+        return
     collection = convert_csv_to_object(file)
     today_price_title ='price '+ str(get_date())
     count = 0
@@ -469,6 +475,12 @@ def update_price_from_file(date):
 # print(get_ticker_data('SXTC'))
 # scan_stocks()
 
-short_invest_daily()
-update_price_from_file('2021-07-18')
+
+def daily_automate(start_date):
+    short_invest_daily()
+    dates = get_range_of_dates(start_date,str(get_date()))
+    for date in dates:
+        update_price_from_file(date)
+
+daily_automate('2021-07-18')
 
