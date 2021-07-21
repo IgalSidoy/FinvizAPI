@@ -147,13 +147,12 @@ def get_range_of_dates(from_date,to_date):
     _from_date = date(int(_date[0]), int(_date[1]), int(_date[2]))
     _next = _from_date
     result = []
-    while True:
+    stop = False
+    while stop == False:
         if str(_next) == to_date:
-            break
+            stop = True
         result.append(str(_next))
         _next = _next + timedelta(days=1)
 
     return result
-
-
 

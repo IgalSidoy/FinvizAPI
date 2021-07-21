@@ -5,8 +5,6 @@ from data.stocks import us_stocks
 from utility import save_dic_csv,load_from_ignored,load_saved_symbols,calculateFairPrice,remove_coma_end_convert_to_int,get_date,working,finished,convert_csv_to_object,get_range_of_dates
 import os.path
 
-
-
 def exception(code):
     if code == 404:
         return {"status": 404,
@@ -437,20 +435,21 @@ def short_invest_daily():
                 "ATR_change":ATR_change,
                 "Position_Status":data['position_status'],
                 "Ratio-Change":rec['change'],
-                "Exit_Price":price_delta,
                 'Signal':rec['signal'],
+                "Exit_Price":price_delta
         }
         
-
-
         count = working(count)
         result.append(res)
 
     save_dic_csv(name,result,True)
     finished('report - '+name.split('/')[2] +' created successfully.')    
 
+def get_file_name(date):
+    return './data/short_invest-'+date+'.csv'
+
 def update_price_from_file(date):
-    file = './data/short_invest-'+date+'.csv'
+    file = get_file_name(date)
 
 
     result = os.path.isfile(file) 
@@ -471,16 +470,28 @@ def update_price_from_file(date):
     save_dic_csv(file,result,True,'w')
     finished('fetching current prices finshed.')
 
+def merge_all_csv(start_date):
+    file_name = './data/result.csv'
+    dates = get_range_of_dates(start_date,str(get_date()))
+    result = []
+    for date in dates:
+        file  = get_file_name(date)
+        collection = convert_csv_to_object(file)
+        for item in collection:
+            result.append(item)
+    save_dic_csv(file_name,result,True,'w')
+
+def daily_automate(start_date,fetch_data=True):
+    if fetch_data:
+        short_invest_daily()
+        dates = get_range_of_dates(start_date,str(get_date()))
+        for date in dates:
+            update_price_from_file(date)
+    merge_all_csv(start_date)
+
+daily_automate('2021-07-18',True)
 
 # print(get_ticker_data('SXTC'))
 # scan_stocks()
 
-
-def daily_automate(start_date):
-    short_invest_daily()
-    dates = get_range_of_dates(start_date,str(get_date()))
-    for date in dates:
-        update_price_from_file(date)
-
-daily_automate('2021-07-18')
 
