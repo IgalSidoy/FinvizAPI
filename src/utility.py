@@ -21,9 +21,6 @@ def convert_csv_to_object(file):
             result.append(obj)
     return result
 
-convert_csv_to_object('./data/short_invest-2021-07-19.csv')
-  
-
 def save_dic_csv(file,collection,add_title=False,open_type = 'a'):
     
     _title_printed = False
