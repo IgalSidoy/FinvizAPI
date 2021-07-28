@@ -149,6 +149,14 @@ def get_ticker_data(ticker):
         volume = _data[10].split("><b>")[1].split("</b></td>")[0]
         change_today = _data[12].split("><b>")[1].split("</b></td>")[0]
 
+        if market_capitalization !='-':
+            market_capitalization_type = market_capitalization[-1]
+            market_capitalization_value = float(market_capitalization[:-1])
+            if market_capitalization_type == 'B':
+                market_capitalization = market_capitalization_value *1000000000
+            if market_capitalization_type == 'M':
+                market_capitalization = market_capitalization_value *1000000
+
         result = {
             "symbol":ticker,
             "status":'200',
@@ -157,7 +165,7 @@ def get_ticker_data(ticker):
             "InsiderOwn": insider_Own,
             "SharesOutstanding": shares_outstanding,
             "Performance_Week": performance_week,
-            "MarketCapitalization": market_capitalization,
+            "MarketCapitalization": str(market_capitalization),
             "Forward_P/E": forward_price_to_earnings,
             "EPS_Next_Year": EPS_next_y,
             "Insider_Transactions": insider_transactions,
@@ -249,7 +257,7 @@ def get_ticker_data(ticker):
         result['position_status'] = ''
         
         res = calculateFairPrice(result['EPS_Next_5Years'],result['EPS(ttm)'],result["P/E"],result['Price'])
-   
+
         if res['status']==200:
             result['fair_price']=res['fair_price']
             result['buy_price']=res['buy_price']
@@ -257,7 +265,7 @@ def get_ticker_data(ticker):
             result['profit_potential']=res['profit_potential']
             _buy_price = float(result['buy_price'])
             _price = float(result['Price'])
-            
+        
             if _buy_price>_price:
                 result['position_status'] = 'Buy'
             else:
@@ -266,6 +274,8 @@ def get_ticker_data(ticker):
     except:
         print('exception')
         return exception(400)
+
+
 
 def get_screeners():
     res = requests.get(connection.base_url, headers=headers)
@@ -314,13 +324,17 @@ def get_screeners():
             result.append(obj)
     return result
 
-def scan_stocks():
-    save_file = './data/dataset.csv'
+def scan_stocks(file_name='./data/dataset.csv'):
+    save_file = file_name
     add_Title = True
 
     ignored_file = './data/ignored.csv'
+
     existing_ignored_collection = load_from_ignored(ignored_file)
+    if check_file_exist(save_file)==False:
+        save_dic_csv(save_file,[],False,'w')
     existing_in_dataset_collection = load_saved_symbols(save_file)
+
     if len(existing_in_dataset_collection)>0:
         add_Title = False
 
@@ -337,24 +351,29 @@ def scan_stocks():
         print('####################')
         print("symbol -- " + symbol)
         res = get_ticker_data(symbol)
-        status = int(res['status'])
+        
+        status = res['status']
+        if status == 'NoneType':
+            continue
+        status = int(status)
 
         print('-----------------------------> '+str(status)+" status")
         print('-----------------------------> '+str(total_count)+" total")
         print('-----------------------------> '+str(len(ignore_collection))+" ignore_collection")
         print('-----------------------------> '+str(len(collection))+" collection")
         
-        if status > 200:
-            ignore_collection.append({'symbol':symbol})
-            if len(ignore_collection)>5:
-                save_dic_csv(ignored_file,ignore_collection,False)
-                ignore_collection = []
-            continue
+        if len(ignore_collection)>5:
+            save_dic_csv(ignored_file,ignore_collection,False)
+            ignore_collection = []
+
         if len(collection)>5:
             save_dic_csv(save_file,collection,add_Title)
             collection = []
             add_Title = False
-        
+
+        if status > 200:
+            ignore_collection.append({'symbol':symbol})
+            continue
 
         if res['fair_price'] == '':
             ignore_collection.append({'symbol':symbol})
@@ -448,13 +467,18 @@ def short_invest_daily():
 def get_file_name(date):
     return './data/short_invest-'+date+'.csv'
 
+def check_file_exist(file):
+    result = os.path.isfile(file) 
+    if result == False:
+        return False
+    return True
+
 def update_price_from_file(date):
     file = get_file_name(date)
 
-
-    result = os.path.isfile(file) 
-    if result == False:
+    if check_file_exist(file) == False:
         return
+
     collection = convert_csv_to_object(file)
     today_price_title ='price '+ str(get_date())
     count = 0
@@ -463,6 +487,8 @@ def update_price_from_file(date):
         count +=1
         symbol = item['Symbol']
         response = get_ticker_data(symbol)
+        if response['status'] == 404:
+            continue
         price = response['Price']
         item[today_price_title] = price
         result.append(item)
@@ -470,12 +496,14 @@ def update_price_from_file(date):
     save_dic_csv(file,result,True,'w')
     finished('fetching current prices finshed.')
 
-def merge_all_csv(start_date):
-    file_name = './data/result.csv'
+def merge_all_csv(start_date,result_file_name='./data/invest_report.csv'):
+    file_name = result_file_name
     dates = get_range_of_dates(start_date,str(get_date()))
     result = []
     for date in dates:
         file  = get_file_name(date)
+        if check_file_exist(file) == False:
+            continue
         collection = convert_csv_to_object(file)
         for item in collection:
             result.append(item)
@@ -489,9 +517,8 @@ def daily_automate(start_date,fetch_data=True):
             update_price_from_file(date)
     merge_all_csv(start_date)
 
-daily_automate('2021-07-18',True)
+# daily_automate('2021-07-18',True)
 
-# print(get_ticker_data('SXTC'))
-# scan_stocks()
-
+#scan_stocks()
+# print(get_ticker_data('NUGT'))
 
