@@ -21,4 +21,5 @@ def get_url_ticker_data(ticker):
   params_res = params_res[:-1]
   url = base_url+sub_url_stock_details+params_res
   return url
+  #
 
