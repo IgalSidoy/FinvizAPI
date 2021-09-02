@@ -108,12 +108,12 @@ def calc_stocatics(data, from_date, days_back, K=12, times=3):
 
     _result = round((stocatics * rel_volume * change * ATR) + last_close, 2)
 
-    print('stocatics : -----------> ' + str(stocatics))
-    print('relative_volume : -----> ' + str(rel_volume))
-    print('change : --------------> ' + str(change))
-    print('ATR : -----------------> ' + str(ATR))
-    print('last_close : ----------> ' + str(last_close))
-    print('target : --------------> ' + str(_result))
+    # print('stocatics : -----------> ' + str(stocatics))
+    # print('relative_volume : -----> ' + str(rel_volume))
+    # print('change : --------------> ' + str(change))
+    # print('ATR : -----------------> ' + str(ATR))
+    # print('last_close : ----------> ' + str(last_close))
+    # print('target : --------------> ' + str(_result))
 
     result['price_next_point'] = _result
     return result
@@ -146,6 +146,23 @@ def get_ticker_data(ticker):
         0].split('],"close":')[0].split(',')
     close_data = ticker_data.split('[')[6].split('],"date":')[
         0].split('],"lastOpen":')[0].split(',')
+
+    news_data = result[15].split('<a')
+    news_results = []
+    for i in range(0, len(news_data)-1):
+
+        date = news_data[i].split('<tr>')[1].split('>')[1].split('&')[0]
+        # print('------------------------'+date +
+        #   '-------------------------------')
+        i += 1
+        title = news_data[i].split('>')[1].replace('</a', '').replace(',', ' ')
+        # print(title)
+
+        news_item = {
+            'date': date,
+            'data': title
+        }
+        # news_results.append(news_item)
 
     # --------------------data extraction-----------------------
 
@@ -375,7 +392,8 @@ def get_ticker_data(ticker):
                 'h': hight_data,
                 'l': low_data,
                 'c': close_data
-            }
+            },
+            'news_results': news_results
         }
         # -------------------remove extra html tags
         for item in result:
@@ -422,6 +440,9 @@ def get_ticker_data(ticker):
     except OSError as err:
         print('exception ' + format(err))
         return exception(400)
+
+
+
 
 
 def get_screeners():
@@ -547,6 +568,8 @@ def scan_stocks(file_name='./data/dataset.csv'):
             "RSI_14": res['RSI_14'],
             "ATR": res['ATR'],
             "Stocatics": res['Stocatics'],
+            "Change": float(res['Change_Today'])*100,
+            'Rel_Volume': res['Rel_Volume'],
             'Price_Next_Point': res['Price_Next_Point'],
             "Position_Status": res['position_status']
 
