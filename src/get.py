@@ -3,7 +3,7 @@ import requests
 import connection as connection
 from connection import headers
 from data.stocks import us_stocks
-from utility import save_dic_csv, load_from_ignored, load_saved_symbols, calculateFairPrice, remove_coma_end_convert_to_int, get_date, working, finished, convert_csv_to_object, get_range_of_dates, convert_metric_number, convert_percent_to_numbric, get_range_date
+from utility import save_dic_csv, load_from_ignored, load_saved_symbols, calculateFairPrice, remove_coma_end_convert_to_int, get_date, working, finished, convert_csv_to_object, get_range_of_dates, convert_metric_number, convert_percent_to_numbric, get_range_date, calculate_coveriance
 import os.path
 
 
@@ -148,22 +148,13 @@ def get_ticker_data(ticker):
         0].split('],"lastOpen":')[0].split(',')
 
     news_data = result[15].split('<a')
-    news_results = []
-    for i in range(0, len(news_data)-1):
 
-        date = news_data[i].split('<tr>')[1].split('>')[1].split('&')[0]
-        # print('------------------------'+date +
-        #   '-------------------------------')
-        i += 1
-        title = news_data[i].split('>')[1].replace('</a', '').replace(',', ' ')
-        # print(title)
+    # covarians
+    close_to_volume_cov = calculate_coveriance(
+        close_data, volume_data, True, True)
 
-        news_item = {
-            'date': date,
-            'data': title
-        }
-        # news_results.append(news_item)
-
+    print(calculate_coveriance(
+        volume_data, close_data, True, True))
     # --------------------data extraction-----------------------
 
     try:
@@ -392,8 +383,8 @@ def get_ticker_data(ticker):
                 'h': hight_data,
                 'l': low_data,
                 'c': close_data
-            },
-            'news_results': news_results
+            }
+
         }
         # -------------------remove extra html tags
         for item in result:
@@ -436,13 +427,15 @@ def get_ticker_data(ticker):
         result['Change_Today'] = convert_percent_to_numbric(
             result['Change_Today'])
 
+        result['Close_To_Volume_Cov'] = close_to_volume_cov
+
         return result
     except OSError as err:
         print('exception ' + format(err))
         return exception(400)
 
 
-
+get_ticker_data("EDIT")
 
 
 def get_screeners():
@@ -570,8 +563,9 @@ def scan_stocks(file_name='./data/dataset.csv'):
             "Stocatics": res['Stocatics'],
             "Change": float(res['Change_Today'])*100,
             'Rel_Volume': res['Rel_Volume'],
-            'Price_Next_Point': res['Price_Next_Point'],
-            "Position_Status": res['position_status']
+            'Short_Ratio': res['Short_Float'],
+            "Position_Status": res['position_status'],
+            "Close_To_Volume_Cov": res['Close_To_Volume_Cov']
 
         }
         collection.append(_res)

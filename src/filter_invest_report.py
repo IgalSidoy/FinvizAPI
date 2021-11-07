@@ -1,11 +1,15 @@
 import utility
 
 filter_configuration = {
-    'Price': {'condition': '<', 'condition_value': 40.0, 'condition_type': 'float'},
-    'Rel_Volume': {'condition': '>', 'condition_value': 1.5, 'condition_type': 'float'},
+    'Price': {'condition': '<', 'condition_value': 60.0, 'condition_type': 'float'},
+    'Rel_Volume': {'condition': '>', 'condition_value': 3, 'condition_type': 'float'},
     'Stocatics': {'condition': '>', 'condition_value': 70, 'condition_type': 'float'},
-    'P/E': {'condition': '<', 'condition_value': 50, 'condition_type': 'float'},
-    'Change': {'condition': '>', 'condition_value': 0, 'condition_type': 'float'}
+    'P/E': {'condition': '<', 'condition_value': 150, 'condition_type': 'float'},
+    'Change': {'condition': '>', 'condition_value': 1, 'condition_type': 'float'},
+    'MarketCap': {'condition': '>', 'condition_value': 10000000, 'condition_type': 'float'},
+    'Volume': {'condition': '>', 'condition_value': 30000, 'condition_type': 'float'},
+
+
 }
 
 
@@ -56,3 +60,6 @@ def filter(name, filter_configuration=filter_configuration):
     result_file = result_file+'-filtered.csv'
 
     utility.save_dic_csv(result_file, result_collection, True, 'w')
+
+
+# filter('./data/13.09.21.csv')

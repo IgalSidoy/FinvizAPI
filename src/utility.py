@@ -212,3 +212,50 @@ def get_range_date(date, days_back=14):
         'to_date': to_date
     }
     return result
+
+
+def calculate_mean(col):
+    sum = 0
+    for i in col:
+        sum += float(i)
+    return sum/len(col)
+
+
+def calculate_coveriance(col_1, col_2, col_1_data_normilaze=False, col_2_data_normilaze=False):
+
+    if col_1_data_normilaze:
+        col_1 = normilazeData(col_1)
+    mean_1 = calculate_mean(col_1)
+
+    if col_2_data_normilaze:
+        col_2 = normilazeData(col_2)
+    mean_2 = calculate_mean(col_2)
+
+    totals = 0
+    for i in range(0, len(col_1)):
+        totals += (float(col_1[i])-mean_1)*(float(col_2[i])-mean_2)
+    covarians = totals/len(col_1)
+    return int(covarians)
+
+
+def normilazeData(col):
+    smallest = float(min(col))
+    if smallest > 99:
+        smallest = 100
+    if smallest > 999:
+        smallest = 1000
+    if smallest > 9999:
+        smallest = 10000
+    if smallest > 99999:
+        smallest = 100000
+    if smallest > 999999:
+        smallest = 1000000
+    if smallest > 9999999:
+        smallest = 10000000
+    if smallest > 99999999:
+        smallest = 100000000
+    if smallest > 999999999:
+        smallest = 1000000000
+    for i in range(0, len(col)):
+        col[i] = float(col[i])/smallest
+    return col
