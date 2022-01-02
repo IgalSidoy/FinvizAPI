@@ -3,7 +3,7 @@ import requests
 import connection as connection
 from connection import headers
 from data.stocks import us_stocks
-from utility import save_dic_csv, load_from_ignored, load_saved_symbols, calculateFairPrice, remove_coma_end_convert_to_int, get_date, working, finished, convert_csv_to_object, get_range_of_dates, convert_metric_number, convert_percent_to_numbric, get_range_date, calculate_coveriance
+from utility import save_dic_csv, load_from_ignored, load_saved_symbols, calculateFairPrice, remove_coma_end_convert_to_int, get_date, working, finished, convert_csv_to_object, get_range_of_dates, convert_metric_number, convert_percent_to_numbric, get_range_date
 import os.path
 
 
@@ -47,7 +47,7 @@ def calc_stocatics(data, from_date, days_back, K=12, times=3):
         highest = 0.00
         count = 0
 
-        # for i in range(len(res['c'])-interval,-1,-1):
+
         for i in range(interval, len(res['c'])):
 
             count += 1
@@ -61,9 +61,13 @@ def calc_stocatics(data, from_date, days_back, K=12, times=3):
             if price < lowest:
                 lowest = price
 
+        if interval>=len(res['c']):
+            continue
         last_price = res['c'][interval]
         numerator = last_price-lowest
         bottom = highest-lowest
+        if bottom == 0:
+            bottom = 1
         stocatics_value = round((numerator/bottom)*100, 2)
         stocastics_result.append(stocatics_value)
 
@@ -131,10 +135,14 @@ def get_ticker_data(ticker):
     encoding = 'utf-8'
     response = res.content.decode(encoding)
     result = response.split("<table")
-    data = result[12].split("<tr")
+    data = result[11].split("<tr")
 
-    ticker_data = response.split("<script")[23]
+
+    ticker_data = response.split("<script")[22]
+
+
     volume_data = ticker_data.split('[')[1].split('],"date":')[0].split(',')
+
     date_data = ticker_data.split('[')[2].split('],"date":')[
         0].split('],"open":')[0].split(',')
     open_data = ticker_data.split('[')[3].split('],"date":')[
@@ -147,14 +155,6 @@ def get_ticker_data(ticker):
     close_data = ticker_data.split('[')[6].split('],"date":')[
         0].split('],"lastOpen":')[0].split(',')
 
-    news_data = result[15].split('<a')
-
-    # covarians
-    close_to_volume_cov = calculate_coveriance(
-        close_data, volume_data, True, True)
-
-    print(calculate_coveriance(
-        volume_data, close_data, True, True))
     # --------------------data extraction-----------------------
 
     try:
@@ -384,7 +384,6 @@ def get_ticker_data(ticker):
                 'l': low_data,
                 'c': close_data
             }
-
         }
         # -------------------remove extra html tags
         for item in result:
@@ -427,15 +426,10 @@ def get_ticker_data(ticker):
         result['Change_Today'] = convert_percent_to_numbric(
             result['Change_Today'])
 
-        result['Close_To_Volume_Cov'] = close_to_volume_cov
-
         return result
     except OSError as err:
         print('exception ' + format(err))
         return exception(400)
-
-
-get_ticker_data("EDIT")
 
 
 def get_screeners():
@@ -561,11 +555,8 @@ def scan_stocks(file_name='./data/dataset.csv'):
             "RSI_14": res['RSI_14'],
             "ATR": res['ATR'],
             "Stocatics": res['Stocatics'],
-            "Change": float(res['Change_Today'])*100,
-            'Rel_Volume': res['Rel_Volume'],
-            'Short_Ratio': res['Short_Float'],
-            "Position_Status": res['position_status'],
-            "Close_To_Volume_Cov": res['Close_To_Volume_Cov']
+            'Price_Next_Point': res['Price_Next_Point'],
+            "Position_Status": res['position_status']
 
         }
         collection.append(_res)

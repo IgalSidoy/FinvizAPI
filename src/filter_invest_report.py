@@ -8,10 +8,7 @@ filter_configuration = {
     'Change': {'condition': '>', 'condition_value': 1, 'condition_type': 'float'},
     'MarketCap': {'condition': '>', 'condition_value': 10000000, 'condition_type': 'float'},
     'Volume': {'condition': '>', 'condition_value': 30000, 'condition_type': 'float'},
-
-
 }
-
 
 def filter_by_type(value, condition_object):
     condition = condition_object['condition']
